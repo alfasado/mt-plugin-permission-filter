@@ -11,8 +11,8 @@ my $plugin = __PACKAGE__->new( {
     name => 'PermissionFilter',
     author_name => 'Alfasado Inc.',
     author_link => 'http://alfasado.net/',
-    description => 'PermissionFilter Patch for Movable Type and Melody.',
-    version => '1.0',
+    description => 'PermissionFilter Patch for Movable Type.',
+    version => '1.1',
 } );
 
 sub init_registry {
@@ -39,6 +39,40 @@ sub init_registry {
                                     }
                                 }
                             }
+                        }
+                        if ( $app->mode eq 'preview_template' ) {
+                            my $perms = $app->blog ? $app->permissions : $app->user->permissions;
+                            unless ( $perms || $app->user->is_superuser ) {
+                                __invalidate_magic( $app );
+                                return $app->return_to_dashboard( permission => 1 );
+                            }
+                            if ( $perms && !$perms->can_edit_templates ) {
+                                __invalidate_magic( $app );
+                                return $app->return_to_dashboard( permission => 1 );
+                            }
+                        }
+                        if ( $app->mode eq 'preview_entry' ) {
+                            my $perms = $app->blog ? $app->permissions : $app->user->permissions;
+                            unless ( $perms || $app->user->is_superuser ) {
+                                __invalidate_magic( $app );
+                                return $app->return_to_dashboard( permission => 1 );
+                            }
+                            if ( $perms && ! ( $app->param( '_type' ) eq 'entry' ? $perms->can_create_post : $perms->can_manage_pages ) ) {
+                                __invalidate_magic( $app );
+                                return $app->return_to_dashboard( permission => 1 );
+                            }
+                        }
+                    },
+                    'MT::App::Upgrader::template_param.install' => sub {
+                        my ( $cb, $app, $param, $tmpl ) = @_;
+                        if ( my $error = $param->{ error } ) {
+                            $param->{ error } = MT::Util::encode_html( $error );
+                        }
+                    },
+                    'MT::App::Trackback::template_param.error' => sub {
+                        my ( $cb, $app, $param, $tmpl ) = @_;
+                        if ( my $error = $param->{ error } ) {
+                            $param->{ error } = MT::Util::encode_html( $error );
                         }
                     },
                     # notification
