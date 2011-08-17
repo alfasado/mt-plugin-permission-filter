@@ -12,7 +12,7 @@ my $plugin = __PACKAGE__->new( {
     author_name => 'Alfasado Inc.',
     author_link => 'http://alfasado.net/',
     description => 'PermissionFilter Patch for Movable Type.',
-    version => '1.1',
+    version => '1.2',
 } );
 
 sub init_registry {
@@ -275,6 +275,7 @@ sub init_registry {
                         if (! $app->user->is_superuser ) {
                             $app->error( $app->translate( 'Invalid request.' ) );
                         }
+                        return 1;
                     },
                     # plugindata
                     $pkg
@@ -289,6 +290,10 @@ sub init_registry {
             },
         },
     } );
+    if ( ref $app eq 'MT::App::NotifyList' ) {
+        my $return_url = $app->base;
+        print "Location: $return_url/\n\n";
+    }
 }
 
 sub __invalidate_magic {
